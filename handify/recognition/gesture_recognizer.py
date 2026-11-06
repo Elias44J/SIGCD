@@ -14,6 +14,9 @@ MODEL_URL = (
 
 class GestureRecognizer:
 
+    # Distância máxima para considerar que a mão "é" um gesto cadastrado.
+    MATCH_THRESHOLD = 0.32
+
     def __init__(self, model_path=None):
 
         if model_path is None:
@@ -24,6 +27,10 @@ class GestureRecognizer:
             )
 
         self.model_path = Path(model_path)
+
+        # Landmarks brutos (x, y na imagem) do último frame; usados pelo
+        # mouse por gestos para saber ONDE a mão está.
+        self.last_points = None
 
         self.model_path.parent.mkdir(
             parents=True,
@@ -123,7 +130,13 @@ class GestureRecognizer:
         result = self.landmarker.detect(image)
 
         if not result.hand_landmarks:
+            self.last_points = None
             return None
+
+        self.last_points = [
+            (landmark.x, landmark.y)
+            for landmark in result.hand_landmarks[0]
+        ]
 
         return self.normalize_landmarks(
             result.hand_landmarks[0]
@@ -145,6 +158,34 @@ class GestureRecognizer:
             np.linalg.norm(a - b)
             / np.sqrt(len(a))
         )
+
+    def best_match(self, sample, gestures):
+        """
+        Gesto mais parecido com a amostra, entre os cadastrados.
+
+        Retorna (gesture_id, distância); (None, inf) se não houver amostras.
+        """
+
+        best_gesture = None
+        best_distance = float("inf")
+
+        if sample is None or not gestures:
+            return best_gesture, best_distance
+
+        for gesture_id, gesture in gestures.items():
+
+            for saved_sample in gesture.get("samples", []):
+
+                if len(saved_sample) != len(sample):
+                    continue
+
+                distance = self.distance(sample, saved_sample)
+
+                if distance < best_distance:
+                    best_distance = distance
+                    best_gesture = gesture_id
+
+        return best_gesture, best_distance
 
     def recognize(
         self,

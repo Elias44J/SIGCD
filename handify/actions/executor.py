@@ -16,6 +16,12 @@ class ActionExecutor:
 
         action_type = action.get("type")
 
+        # Ações de mouse podem apontar para uma posição fixa ou predefinida.
+        position = action.get("position")
+        if position and action_type in ("click", "double_click", "scroll", "hscroll"):
+            x, y = self.resolve_position(position)
+            pyautogui.moveTo(x, y)
+
         if action_type == "key":
 
             key = action["key"]
@@ -54,13 +60,9 @@ class ActionExecutor:
 
         elif action_type == "click":
 
-            print("ANTES:", pyautogui.position())
-
             pyautogui.click(
                 button=action.get("button", "left")
             )
-
-            print("DEPOIS:", pyautogui.position())
 
         elif action_type == "double_click":
 
@@ -200,6 +202,20 @@ class ActionExecutor:
                 f"Tipo de ação desconhecido: "
                 f"{action_type}"
             )
+
+    @staticmethod
+    def resolve_position(position):
+        mode = position.get("mode", "preset")
+        if mode == "custom":
+            return int(position["x"]), int(position["y"])
+
+        width, height = pyautogui.size()
+        presets = {
+            "center": (width // 2, height // 2),
+            "top_center": (width // 2, height // 4),
+            "bottom_center": (width // 2, (height * 3) // 4),
+        }
+        return presets.get(position.get("value", "center"), presets["center"])
 
     def special(self, command):
 
