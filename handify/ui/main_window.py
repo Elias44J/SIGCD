@@ -658,10 +658,6 @@ class MainWindow(QMainWindow):
         "Tecla": ["key"],
         "Combinação": ["keys"],
         "Sequência": ["sequence"],
-        "Clique": ["button"],
-        "Duplo clique": ["button"],
-        "Rolagem": ["amount"],
-        "Rolagem horizontal": ["amount"],
         "Comando especial": ["special"],
     }
 
@@ -990,12 +986,6 @@ class MainWindow(QMainWindow):
         )
         form.addRow("Sequência", self.sequence_edit)
 
-        # Botão
-
-        self.button_combo = QComboBox()
-        self.button_combo.addItems(["left", "right", "middle"])
-        form.addRow("Botão", self.button_combo)
-
         # Duração (usada apenas por 'hold')
 
         self.duration = QDoubleSpinBox()
@@ -1004,16 +994,6 @@ class MainWindow(QMainWindow):
         self.duration.setSuffix(" s")
         self.duration.setValue(1)
         form.addRow("Duração", self.duration)
-
-        # Quantidade
-
-        self.amount_spin = QSpinBox()
-        self.amount_spin.setRange(-1000, 1000)
-        self.amount_spin.setValue(50)
-        self.amount_spin.setToolTip(
-            "Valores negativos rolam no sentido contrário."
-        )
-        form.addRow("Rolagem", self.amount_spin)
 
         # Especial
 
@@ -1069,8 +1049,6 @@ class MainWindow(QMainWindow):
             "key": self.key_edit,
             "keys": self.keys_edit,
             "sequence": self.sequence_edit,
-            "button": self.button_combo,
-            "amount": self.amount_spin,
             "special": self.special_combo,
         }
 
@@ -1474,10 +1452,6 @@ class MainWindow(QMainWindow):
             "key": "Tecla",
             "hotkey": "Combinação",
             "sequence": "Sequência",
-            "click": "Clique",
-            "double_click": "Duplo clique",
-            "scroll": "Rolagem",
-            "hscroll": "Rolagem horizontal",
             "special": "Comando especial"
         }
 
@@ -1492,11 +1466,7 @@ class MainWindow(QMainWindow):
             self.sequence_to_text(action.get("actions", []))
         )
 
-        self.button_combo.setCurrentText(action.get("button", "left"))
-
         self.duration.setValue(float(action.get("duration", 1)))
-
-        self.amount_spin.setValue(int(action.get("amount", 5)))
 
         self.special_combo.setCurrentText(
             action.get("command", "screenshot")
@@ -1594,40 +1564,12 @@ class MainWindow(QMainWindow):
 
             return {"type": "sequence", "actions": actions}
 
-        if label == "Clique":
-
-            return {
-                "type": "click",
-                "button": self.button_combo.currentText()
-            }
-
-        if label == "Duplo clique":
-
-            return {
-                "type": "double_click",
-                "button": self.button_combo.currentText()
-            }
-
         if label == "Pressionar e segurar":
 
             return {
                 "type": "hold",
                 "key": self.key_edit.text().strip().lower(),
                 "duration": self.duration.value()
-            }
-
-        if label == "Rolagem":
-
-            return {
-                "type": "scroll",
-                "amount": self.amount_spin.value()
-            }
-
-        if label == "Rolagem horizontal":
-
-            return {
-                "type": "hscroll",
-                "amount": self.amount_spin.value()
             }
 
         if label == "Comando especial":

@@ -1,22 +1,4 @@
-"""
-Mouse por gestos.
 
-O modo mouse só fica ligado depois do gesto de ativação (ver
-actions/activation.py); enquanto desligado, nada aqui mexe no cursor.
-
-Cada "botão" do mouse (clique esquerdo, do meio, direito e rolagem) tem o
-seu próprio gesto, gravado na aba Mouse (mouse.json), independente dos
-gestos do teclado.
-
-Dois jeitos de mover o cursor (ajuste "move_mode"):
-  absolute  a posição da mão na câmera é a posição na tela;
-  relative  o cursor só anda enquanto o gesto de EMBREAGEM ("clutch") é
-            mantido, pelo deslocamento da mão. Soltar a embreagem permite
-            reposicionar a mão sem mexer o cursor, como levantar o mouse.
-
-Uso (a cada frame):
-    role = mouse_mode.process(role_reconhecido, recognizer.last_points)
-"""
 import time
 from collections import deque
 
@@ -33,17 +15,17 @@ class MouseMode:
         self.config = config
         self.cfg = config.settings()
 
-        self.active = False       # modo mouse ligado (por gesto de ativação)
+        self.active = False       
 
-        self.role = None          # papel estável atual
-        self.candidate = None     # papel visto neste frame (antes do debounce)
+        self.role = None          
+        self.candidate = None     
         self.count = 0
 
-        self.sx = None            # posição suavizada do cursor
+        self.sx = None            
         self.sy = None
 
-        self.rel_s = None         # relativo: posição suavizada da mão
-        self.rel_acc = [0.0, 0.0] # relativo: movimento acumulado (zona morta)
+        self.rel_s = None         
+        self.rel_acc = [0.0, 0.0] 
         self.history = deque(maxlen=12)
 
         self.press_time = 0.0
@@ -53,10 +35,6 @@ class MouseMode:
         self.scroll_acc = 0.0
 
         self.screen_w, self.screen_h = pyautogui.size()
-
-    # -----------------------------------------------------
-    # Configuração
-    # -----------------------------------------------------
 
     def reload(self):
         """Recarrega as configurações (chamar depois de salvar na UI)."""
@@ -73,10 +51,6 @@ class MouseMode:
 
         self.active = active
 
-    # -----------------------------------------------------
-    # Posição do cursor
-    # -----------------------------------------------------
-
     def _to_screen(self, x, y):
         margin = self.cfg["margin"]
 
@@ -86,7 +60,6 @@ class MouseMode:
         nx = min(max((x - margin) / (1.0 - 2 * margin), 0.0), 1.0)
         ny = min(max((y - margin) / (1.0 - 2 * margin), 0.0), 1.0)
 
-        # 2 px de folga: não aciona o FAILSAFE do pyautogui nos cantos.
         px = 2 + nx * (self.screen_w - 5)
         py = 2 + ny * (self.screen_h - 5)
         return px, py
@@ -116,16 +89,6 @@ class MouseMode:
         return min(max(value, 2.0), limit - 3.0)
 
     def _track_relative(self, points):
-        """
-        Move o cursor pelo DESLOCAMENTO da mão, não pela posição dela.
-
-        - A posição da mão é suavizada (média móvel) para tirar tremor.
-        - Zona morta por acúmulo: movimentos minúsculos somam até passar
-          de `deadzone` px e só então saem. Tremor (vai e volta) se anula,
-          mas movimento lento e real NÃO é descartado.
-        - O cursor parte de onde ele já está (o mouse físico pode ter
-          sido usado) e nunca dá salto ao reengatar a embreagem.
-        """
         x, y = points[self.cfg["track_point"]]
 
         if self.cfg["mirror"]:
@@ -166,11 +129,6 @@ class MouseMode:
         self._move_to(self.sx, self.sy)
 
     def _anchor(self):
-        """
-        Posição de onde o gesto COMEÇOU. Enquanto o gesto é confirmado
-        (hold_frames) a mão já se mexeu um pouco; voltamos alguns frames
-        para o clique cair onde o usuário estava apontando.
-        """
         if not self.history:
             return self.sx, self.sy
 
@@ -178,24 +136,12 @@ class MouseMode:
         index = max(0, len(self.history) - 1 - back)
         return self.history[index]
 
-    # -----------------------------------------------------
-    # Loop principal
-    # -----------------------------------------------------
-
     def process(self, role, points, now=None):
-        """
-        role:   botão do mouse cujo gesto foi reconhecido neste frame
-                ("left_click", "middle_click", "right_click", "scroll")
-                ou None
-        points: lista de 21 (x, y) em coordenadas da imagem (ou None)
-        Retorna o papel estável atual (ou None).
-        """
         if not self.active:
             return None
 
         now = time.monotonic() if now is None else now
 
-        # Mão saiu da câmera: solta tudo, sem clicar.
         if points is None:
             self.rel_s = None
             self.candidate, self.count = None, 0
@@ -204,11 +150,10 @@ class MouseMode:
             self.history.clear()
             return None
 
-        # Cursor só anda quando não está "travado" por um gesto de botão.
         dragging = self.role == "left_click" and self.dragging
 
         if self.cfg["move_mode"] == "relative":
-            # Só com a embreagem (ou arrastando) a mão move o cursor.
+
             tracking = self.role == "clutch" or dragging
         else:
             tracking = self.role in (None, "clutch") or dragging
@@ -216,7 +161,7 @@ class MouseMode:
         if tracking:
             self._track(points)
         else:
-            self.rel_s = None     # a próxima embreagem recomeça do zero
+            self.rel_s = None     
 
         # Debounce do papel
         raw = role if role in ROLES else None
@@ -235,10 +180,6 @@ class MouseMode:
 
         return self.role
 
-    # -----------------------------------------------------
-    # Transições entre papéis
-    # -----------------------------------------------------
-
     def _transition(self, new, now, cancel=False):
         old = self.role
 
@@ -248,7 +189,7 @@ class MouseMode:
                 pyautogui.mouseUp()
                 self.dragging = False
             elif new is None and not cancel:
-                pyautogui.click()          # toque rápido = clique
+                pyautogui.click()          
 
         if old == "scroll":
             self.scroll_y = None
@@ -256,7 +197,6 @@ class MouseMode:
 
         self.role = new
 
-        # --- entrando no novo papel ---
         if new in FROZEN_ROLES:
             x, y = self._anchor()
             if x is not None:
@@ -274,7 +214,6 @@ class MouseMode:
             self.scroll_acc = 0.0
 
     def _continuous(self, points, now):
-        # Segurou o pinch esquerdo tempo suficiente: começa a arrastar.
         if (
             self.role == "left_click"
             and not self.dragging
@@ -291,9 +230,9 @@ class MouseMode:
                 self.scroll_y = y
                 return
 
-            dy = self.scroll_y - y        # mão sobe -> rola para cima
+            dy = self.scroll_y - y        
 
-            if abs(dy) < 0.004:           # zona morta
+            if abs(dy) < 0.004:          
                 return
 
             self.scroll_acc += dy * self.cfg["scroll_sensitivity"]
@@ -304,10 +243,6 @@ class MouseMode:
                 self.scroll_acc -= steps
 
             self.scroll_y = y
-
-    # -----------------------------------------------------
-    # Limpeza
-    # -----------------------------------------------------
 
     def release(self):
         self.rel_s = None

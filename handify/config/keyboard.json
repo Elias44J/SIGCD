@@ -1,15 +1,3 @@
 {
-    "gestures": {
-        "a23b6573c1494bc48f7d7bcb354efb8e": {
-            "name": "Mouse Esquerdo",
-            "samples": [],
-            "enabled": true,
-            "min_confidence": 0.65,
-            "cooldown": 0.5,
-            "action": {
-                "type": "key",
-                "key": "enter"
-            }
-        }
-    }
+    "gestures": {}
 }

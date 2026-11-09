@@ -1,15 +1,4 @@
-"""
-Gesto de ativação do modo mouse.
 
-Um único gesto (ex.: o "chifre" 🤘) liga e desliga o modo mouse. Para não
-disparar por acidente, a pose precisa ser MANTIDA por `hold` segundos.
-Depois de acionar, é preciso desfazer a pose antes de poder acionar de novo
-(evita ligar e desligar sem parar enquanto a mão continua no chifre).
-
-Uso (a cada frame):
-    if gesture.update(gesto_visto_neste_frame):   # True/False
-        ...alterna o modo mouse...
-"""
 import time
 
 
