@@ -33,7 +33,6 @@ from handify.config.manager import (
     MouseConfig,
     MOUSE_ROLES,
     MOUSE_ACTIVATION,
-    MOUSE_EMERGENCY,
 )
 from handify.actions.executor import ActionExecutor
 from handify.actions.mouse_mode import MouseMode
@@ -391,6 +390,49 @@ def make_arrow_icons(theme, color):
     return paths
 
 
+def make_theme_icon(kind, color):
+    """Desenha os ícones de lua/sol sem depender de fontes de emoji."""
+    size = 48
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.transparent)
+
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing)
+    pen = QPen(QColor(color))
+    pen.setWidthF(3.2)
+    pen.setCapStyle(Qt.RoundCap)
+    pen.setJoinStyle(Qt.RoundJoin)
+    painter.setPen(pen)
+    painter.setBrush(Qt.NoBrush)
+
+    if kind == "moon":
+        # Silhueta de lua crescente, preenchida para ficar legível em 22 px.
+        from PySide6.QtGui import QPainterPath
+        path = QPainterPath()
+        path.moveTo(34, 7)
+        path.cubicTo(17, 8, 8, 21, 13, 33)
+        path.cubicTo(19, 45, 35, 44, 41, 31)
+        path.cubicTo(31, 37, 22, 30, 22, 21)
+        path.cubicTo(22, 15, 27, 9, 34, 7)
+        path.closeSubpath()
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QColor(color))
+        painter.drawPath(path)
+    else:
+        painter.drawEllipse(QRectF(16, 16, 16, 16))
+        import math
+        for angle in range(0, 360, 45):
+            radians = math.radians(angle)
+            x1 = 24 + math.cos(radians) * 14
+            y1 = 24 + math.sin(radians) * 14
+            x2 = 24 + math.cos(radians) * 19
+            y2 = 24 + math.sin(radians) * 19
+            painter.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+
+    painter.end()
+    return QIcon(pixmap)
+
+
 def make_tab_icon(kind, color_off, color_on):
     """
     Ícone desenhado em código ('keyboard' ou 'mouse').
@@ -645,9 +687,6 @@ class MainWindow(QMainWindow):
         self.activation = ActivationGesture(
             hold=self.mouse_cfg["activation_hold"]
         )
-        self.emergency = ActivationGesture(
-            hold=self.mouse_cfg["emergency_hold"], cooldown=0.8
-        )
 
         self.capture_store = None
         self.last_mouse_role = None
@@ -792,14 +831,9 @@ class MainWindow(QMainWindow):
 
         self.theme_button = QPushButton()
         self.theme_button.setCursor(Qt.PointingHandCursor)
-        self.theme_button.setToolTip("Alternar entre modo claro e escuro")
+        self.theme_button.setFixedSize(40, 40)
+        self.theme_button.setToolTip("Ativar modo escuro")
         self.theme_button.clicked.connect(self.toggle_theme)
-
-        header = QHBoxLayout()
-        header.addStretch()
-        header.addWidget(self.theme_button)
-
-        column.addLayout(header)
 
         # Duas abas: gestos que digitam (teclado) e gestos que movem o
         # mouse. Cada uma tem a sua configuração e o seu arquivo JSON.
@@ -808,6 +842,9 @@ class MainWindow(QMainWindow):
         self.tabs.setIconSize(QSize(20, 20))
         self.tabs.addTab(self.build_keyboard_tab(), "Teclado")
         self.tabs.addTab(self.build_mouse_tab(), "Mouse")
+        # O botão de tema ocupa o canto superior direito da própria barra
+        # de abas, mantendo tema, Teclado e Mouse alinhados na mesma linha.
+        self.tabs.setCornerWidget(self.theme_button, Qt.TopRightCorner)
         self.tabs.currentChanged.connect(self.on_tab_changed)
         self.update_tab_icons()
 
@@ -1049,8 +1086,14 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(build_style(theme))
 
         if hasattr(self, "theme_button"):
-            self.theme_button.setText(
-                "Modo escuro" if theme == "light" else "Modo claro"
+            # Ícone vetorial desenhado com QPainter (não depende de fonte emoji).
+            icon_color = PALETTES.get(theme, PALETTES["light"])["muted"]
+            self.theme_button.setText("")
+            self.theme_button.setIcon(make_theme_icon("moon" if theme == "light" else "sun", icon_color))
+            self.theme_button.setIconSize(QSize(22, 22))
+            self.theme_button.setToolTip(
+                "Ativar modo escuro" if theme == "light"
+                else "Ativar modo claro"
             )
 
         palette = PALETTES.get(theme, PALETTES["light"])
@@ -1688,7 +1731,7 @@ class MainWindow(QMainWindow):
             sample, main_gestures
         )
 
-        # Ativação e emergência valem nos dois modos.
+        # O gesto de ativação vale nos dois modos.
         special_id, special_distance = self.recognizer.best_match(
             sample, self.mouse_config.special_gestures()
         )
@@ -1716,30 +1759,6 @@ class MainWindow(QMainWindow):
         activation_seen = (
             source == "special" and accepted and gesture_id == "activation"
         )
-        emergency_seen = (
-            source == "special" and accepted and gesture_id == "emergency"
-        )
-
-        # ---- Parada de emergência: desliga tudo na hora -----------------
-
-        if not self.is_capturing:
-
-            if self.emergency.update(emergency_seen):
-                if mouse_on:
-                    self.mouse_mode.emergency_stop()
-                    self.last_mouse_role = None
-                    self.update_mode_badge()
-                    self.set_status(
-                        "PARADA DE EMERGÊNCIA — modo mouse desligado e "
-                        "botões soltos.",
-                        "error"
-                    )
-                    mouse_on = False
-
-                keyboard_gesture = None
-                mouse_gesture = None
-                activation_seen = False
-
         # ---- Gesto de ativação: liga/desliga o modo mouse ---------------
 
         if not self.is_capturing:
@@ -1759,7 +1778,7 @@ class MainWindow(QMainWindow):
         # Enquanto o gesto de ativação está sendo segurado, o teclado fica
         # quieto para a pose não disparar atalhos sem querer.
         sequence_running = (
-            self.activation.progress > 0 or self.emergency.progress > 0
+            self.activation.progress > 0
         )
 
         # ---- Painel "Gesto detectado" --------------------------------
@@ -1905,22 +1924,14 @@ class MainWindow(QMainWindow):
         )
         form.addRow("Cursor segue", self.mouse_track)
 
-        self.mouse_move_mode = QComboBox()
-        self.mouse_move_mode.addItem(
-            "Absoluto — a mão é a posição na tela", "absolute"
+        clutch_info = QLabel(
+            "O cursor só se movimenta enquanto você mantém o gesto de "
+            "embreagem. Ao soltá-lo, a mão pode ser reposicionada sem "
+            "mover o cursor, como levantar um mouse para reposicioná-lo."
         )
-        self.mouse_move_mode.addItem(
-            "Relativo — só move com a embreagem", "relative"
-        )
-        self.mouse_move_mode.setCurrentIndex(
-            max(0, self.mouse_move_mode.findData(cfg["move_mode"]))
-        )
-        self.mouse_move_mode.setToolTip(
-            "Relativo: o cursor só anda enquanto você mantém o gesto de "
-            "embreagem. Solte para reposicionar a mão, como levantar o "
-            "mouse do tapete. Cansa menos o braço."
-        )
-        form.addRow("Movimento", self.mouse_move_mode)
+        clutch_info.setObjectName("muted")
+        clutch_info.setWordWrap(True)
+        form.addRow("Embreagem", clutch_info)
 
         self.mouse_gain = QDoubleSpinBox()
         self.mouse_gain.setRange(0.3, 8.0)
@@ -2005,11 +2016,16 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(form)
 
+        save_button = QPushButton("Salvar configuração")
+        save_button.setObjectName("primary")
+        save_button.setCursor(Qt.PointingHandCursor)
+        save_button.clicked.connect(self.save_mouse_configuration)
+        layout.addWidget(save_button)
+
         # Só conecta os sinais depois de preencher os valores.
         for signal in (
             self.mouse_activation_hold.valueChanged,
             self.mouse_track.currentIndexChanged,
-            self.mouse_move_mode.currentIndexChanged,
             self.mouse_gain.valueChanged,
             self.mouse_deadzone.valueChanged,
             self.mouse_mirror.toggled,
@@ -2032,13 +2048,6 @@ class MainWindow(QMainWindow):
         self.mouse_role_combo.clear()
 
         for key, label in MOUSE_ACTIVATION.items():
-            total = len(self.mouse_config.get(key).get("samples", []))
-            self.mouse_role_combo.addItem(
-                f"{label}  ·  {total} amostras",
-                key
-            )
-
-        for key, label in MOUSE_EMERGENCY.items():
             total = len(self.mouse_config.get(key).get("samples", []))
             self.mouse_role_combo.addItem(
                 f"{label}  ·  {total} amostras",
@@ -2076,8 +2085,6 @@ class MainWindow(QMainWindow):
 
         if role in MOUSE_ACTIVATION:
             what = "gesto de ativação"
-        elif role in MOUSE_EMERGENCY:
-            what = "gesto de emergência"
         else:
             what = "gesto deste botão"
 
@@ -2109,7 +2116,6 @@ class MainWindow(QMainWindow):
     def mouse_label(key):
         return (
             MOUSE_ACTIVATION.get(key)
-            or MOUSE_EMERGENCY.get(key)
             or MOUSE_ROLES.get(key, key)
         )
 
@@ -2124,12 +2130,16 @@ class MainWindow(QMainWindow):
                 "Capturar amostra do gesto atual"
             )
 
+    def save_mouse_configuration(self):
+        self.save_mouse_settings()
+        self.set_status("Configuração do mouse salva.", "ok")
+
     def save_mouse_settings(self, *_):
 
         cfg = self.mouse_config.settings()
 
         cfg["track_point"] = self.mouse_track.currentData()
-        cfg["move_mode"] = self.mouse_move_mode.currentData()
+        cfg["move_mode"] = "relative"
         cfg["gain"] = self.mouse_gain.value()
         cfg["deadzone"] = self.mouse_deadzone.value()
         cfg["mirror"] = self.mouse_mirror.isChecked()
@@ -2145,7 +2155,6 @@ class MainWindow(QMainWindow):
 
         self.mouse_cfg = self.mouse_config.settings()
         self.activation.hold = self.mouse_cfg["activation_hold"]
-        self.emergency.hold = self.mouse_cfg["emergency_hold"]
 
         # Trocar de modo de movimento: recomeça a embreagem do zero.
         self.mouse_mode.rel_s = None

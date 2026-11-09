@@ -309,21 +309,6 @@ class MouseMode:
     # Limpeza
     # -----------------------------------------------------
 
-    def emergency_stop(self):
-        """
-        Parada de emergência: solta QUALQUER botão preso e desliga o modo
-        mouse. Não faz clique nenhum.
-        """
-        for button in ("left", "middle", "right"):
-            try:
-                pyautogui.mouseUp(button=button)
-            except Exception:
-                pass
-
-        self.dragging = False
-        self.set_active(False)
-        self.release()
-
     def release(self):
         self.rel_s = None
         if self.dragging:

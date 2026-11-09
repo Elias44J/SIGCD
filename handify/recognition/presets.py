@@ -38,7 +38,6 @@ CANNED = {
 # (O clique do meio fica sem sugestão: não sobra pose pronta distinta.)
 SUGGESTION = [
     ("activation", "ILoveYou"),
-    ("emergency", "Thumb_Down"),
     ("clutch", "Closed_Fist"),
     ("left_click", "Pointing_Up"),
     ("right_click", "Victory"),

@@ -38,17 +38,10 @@ MOUSE_ACTIVATION = {
     "activation": "Ativação do modo mouse",
 }
 
-# Gesto de segurança: desliga o modo mouse na hora e solta qualquer botão
-# preso. Vale em qualquer modo.
-MOUSE_EMERGENCY = {
-    "emergency": "Parada de emergência",
-}
-
 MOUSE_DEFAULTS = {
-    "move_mode": "absolute",   # "absolute" ou "relative" (com embreagem)
+    "move_mode": "relative",  # cursor controlado apenas pela embreagem
     "gain": 1.5,               # relativo: quantas telas por "tela de mão"
     "deadzone": 1.0,           # relativo: px acumulados antes de mover
-    "emergency_hold": 0.25,    # segundos segurando o gesto de emergência
     "track_point": 9,          # 9 = palma, 8 = ponta do indicador
     "mirror": True,
     "smoothing": 0.35,
@@ -119,7 +112,7 @@ def migrate_legacy(directory):
         "settings": copy.deepcopy(MOUSE_DEFAULTS),
         "gestures": {
             role: {"name": label, "samples": []}
-            for role, label in {**MOUSE_ACTIVATION, **MOUSE_EMERGENCY, **MOUSE_ROLES}.items()
+            for role, label in {**MOUSE_ACTIVATION, **MOUSE_ROLES}.items()
         },
     }
 
@@ -231,16 +224,16 @@ class MouseConfig(JsonStore):
         )
 
         self.data.setdefault("settings", {})
-        for old in ("enabled", "activation_window"):   # chaves antigas
+        for old in ("enabled", "activation_window", "emergency_hold"):   # chaves antigas
             self.data["settings"].pop(old, None)
-        self.all_gestures()      # garante os passos e os 4 papéis
+        self.all_gestures()      # garante o gesto de ativação e os papéis do mouse
 
     # ---- gestos ----------------------------------------------------
 
     def all_gestures(self):
         gestures = self.data.setdefault("gestures", {})
 
-        for key, label in {**MOUSE_ACTIVATION, **MOUSE_EMERGENCY, **MOUSE_ROLES}.items():
+        for key, label in {**MOUSE_ACTIVATION, **MOUSE_ROLES}.items():
             entry = gestures.setdefault(key, {})
             entry.setdefault("name", label)
             entry.setdefault("samples", [])
@@ -250,7 +243,6 @@ class MouseConfig(JsonStore):
             if (
                 key not in MOUSE_ROLES
                 and key not in MOUSE_ACTIVATION
-                and key not in MOUSE_EMERGENCY
             ):
                 gestures.pop(key)
 
@@ -266,14 +258,9 @@ class MouseConfig(JsonStore):
         everything = self.all_gestures()
         return {step: everything[step] for step in MOUSE_ACTIVATION}
 
-    def emergency_gestures(self):
-        """Só o gesto de parada de emergência."""
-        everything = self.all_gestures()
-        return {key: everything[key] for key in MOUSE_EMERGENCY}
-
     def special_gestures(self):
-        """Ativação + emergência: valem em qualquer modo."""
-        return {**self.activation_gestures(), **self.emergency_gestures()}
+        """Gesto de ativação, válido em qualquer modo."""
+        return self.activation_gestures()
 
     def activation_ready(self):
         """True quando o gesto de ativação já tem amostras gravadas."""
