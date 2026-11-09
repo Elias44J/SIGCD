@@ -16,12 +16,6 @@ class ActionExecutor:
 
         action_type = action.get("type")
 
-        # Ações de mouse podem apontar para uma posição fixa ou predefinida.
-        position = action.get("position")
-        if position and action_type in ("click", "double_click", "scroll", "hscroll"):
-            x, y = self.resolve_position(position)
-            pyautogui.moveTo(x, y)
-
         if action_type == "key":
 
             key = action["key"]

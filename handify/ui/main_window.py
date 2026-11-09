@@ -1848,8 +1848,8 @@ class MainWindow(QMainWindow):
 
         card, layout = make_card(
             "Cursor e cliques",
-            "Com o modo mouse ligado, o cursor acompanha a posição da "
-            "sua mão na câmera."
+            "Com o modo mouse ligado, mantenha o gesto de embreagem para "
+            "movimentar o cursor. Solte-o para reposicionar a mão."
         )
 
         cfg = self.mouse_config.settings()
@@ -1857,14 +1857,6 @@ class MainWindow(QMainWindow):
         form = QFormLayout()
         form.setHorizontalSpacing(14)
         form.setVerticalSpacing(10)
-
-        self.mouse_track = QComboBox()
-        self.mouse_track.addItem("Palma da mão", 9)
-        self.mouse_track.addItem("Ponta do indicador", 8)
-        self.mouse_track.setCurrentIndex(
-            max(0, self.mouse_track.findData(cfg["track_point"]))
-        )
-        form.addRow("Cursor segue", self.mouse_track)
 
         clutch_info = QLabel(
             "O cursor só se movimenta enquanto você mantém o gesto de "
@@ -1967,7 +1959,6 @@ class MainWindow(QMainWindow):
         # Só conecta os sinais depois de preencher os valores.
         for signal in (
             self.mouse_activation_hold.valueChanged,
-            self.mouse_track.currentIndexChanged,
             self.mouse_gain.valueChanged,
             self.mouse_deadzone.valueChanged,
             self.mouse_mirror.toggled,
@@ -2080,7 +2071,6 @@ class MainWindow(QMainWindow):
 
         cfg = self.mouse_config.settings()
 
-        cfg["track_point"] = self.mouse_track.currentData()
         cfg["move_mode"] = "relative"
         cfg["gain"] = self.mouse_gain.value()
         cfg["deadzone"] = self.mouse_deadzone.value()
@@ -2098,7 +2088,7 @@ class MainWindow(QMainWindow):
         self.mouse_cfg = self.mouse_config.settings()
         self.activation.hold = self.mouse_cfg["activation_hold"]
 
-        # Trocar de modo de movimento: recomeça a embreagem do zero.
+        # Reinicia a referência da embreagem após salvar as configurações.
         self.mouse_mode.rel_s = None
 
     # -----------------------------------------------------

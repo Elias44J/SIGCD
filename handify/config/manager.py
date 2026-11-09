@@ -42,7 +42,6 @@ MOUSE_DEFAULTS = {
     "move_mode": "relative",  # cursor controlado apenas pela embreagem
     "gain": 1.5,               # relativo: quantas telas por "tela de mão"
     "deadzone": 1.0,           # relativo: px acumulados antes de mover
-    "track_point": 9,          # 9 = palma, 8 = ponta do indicador
     "mirror": True,
     "smoothing": 0.35,
     "margin": 0.15,

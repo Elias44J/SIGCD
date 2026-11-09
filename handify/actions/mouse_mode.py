@@ -7,6 +7,7 @@ import pyautogui
 from handify.config.manager import MOUSE_ROLES as ROLES
 
 FROZEN_ROLES = ("left_click", "middle_click", "right_click", "scroll")
+TRACK_POINT = 9  # Centro da palma: ponto fixo usado para seguir a mão.
 
 
 class MouseMode:
@@ -68,28 +69,14 @@ class MouseMode:
         pyautogui.moveTo(x, y, _pause=False)
 
     def _track(self, points):
-        if self.cfg["move_mode"] == "relative":
-            self._track_relative(points)
-            return
-
-        tx, ty = self._to_screen(*points[self.cfg["track_point"]])
-
-        if self.sx is None:
-            self.sx, self.sy = tx, ty
-        else:
-            a = self.cfg["smoothing"]
-            self.sx += a * (tx - self.sx)
-            self.sy += a * (ty - self.sy)
-
-        self.history.append((self.sx, self.sy))
-        self._move_to(self.sx, self.sy)
+        self._track_relative(points)
 
     @staticmethod
     def _clamp(value, limit):
         return min(max(value, 2.0), limit - 3.0)
 
     def _track_relative(self, points):
-        x, y = points[self.cfg["track_point"]]
+        x, y = points[TRACK_POINT]
 
         if self.cfg["mirror"]:
             x = 1.0 - x
@@ -152,14 +139,11 @@ class MouseMode:
 
         dragging = self.role == "left_click" and self.dragging
 
-        if self.cfg["move_mode"] == "relative":
-
-            tracking = self.role == "clutch" or dragging
-        else:
-            tracking = self.role in (None, "clutch") or dragging
+        # O cursor só acompanha a mão enquanto a embreagem estiver ativa.
+        tracking = self.role == "clutch" or dragging
 
         if tracking:
-            self._track(points)
+            self._track_relative(points)
         else:
             self.rel_s = None     
 
@@ -224,7 +208,7 @@ class MouseMode:
 
         # Rolagem: mover a mão para cima/baixo.
         if self.role == "scroll":
-            y = points[self.cfg["track_point"]][1]
+            y = points[TRACK_POINT][1]
 
             if self.scroll_y is None:
                 self.scroll_y = y
