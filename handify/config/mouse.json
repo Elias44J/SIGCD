@@ -1,15 +1,15 @@
 {
     "settings": {
-        "move_mode": "absolute",
+        "move_mode": "relative",
         "gain": 1.0,
         "deadzone": 1.0,
         "emergency_hold": 0.25,
         "track_point": 9,
         "mirror": true,
         "smoothing": 0.1,
-        "margin": 0.15,
+        "margin": 0.0,
         "scroll_sensitivity": 250,
-        "drag_after": 0.3,
+        "drag_after": 0.75,
         "min_confidence": 0.55,
         "hold_frames": 3,
         "release_frames": 3,
