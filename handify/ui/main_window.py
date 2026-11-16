@@ -1291,11 +1291,6 @@ class MainWindow(QMainWindow):
             "Prepare-se... 5"
         )
 
-        self.set_status(
-            "Captura iniciando em 5 segundos...",
-            "warn"
-        )
-
         self.countdown_timer.start()
 
     def update_countdown(self):
@@ -1344,11 +1339,6 @@ class MainWindow(QMainWindow):
 
         self.capture_progress.setText(
             f"Capturando amostras: {count}/{self.capture_target}"
-        )
-
-        self.set_status(
-            f"Coletando amostras: {count}/{self.capture_target}",
-            "warn"
         )
 
         if count >= self.capture_target:
