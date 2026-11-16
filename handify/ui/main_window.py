@@ -665,7 +665,7 @@ class MainWindow(QMainWindow):
 
         super().__init__()
 
-        self.setWindowTitle("SIGCD — Gestos personalizados")
+        self.setWindowTitle("Handify — Gestos personalizados")
         self.resize(1240, 760)
         self.setMinimumSize(1000, 640)
 

@@ -5,7 +5,7 @@ from handify.ui.main_window import MainWindow
 
 def main():
     app = QApplication(sys.argv)
-    app.setApplicationName("SIGCD")
+    app.setApplicationName("Handify")
 
     window = MainWindow()
     window.show()
