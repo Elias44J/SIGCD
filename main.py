@@ -9,11 +9,11 @@ from handify.ui.main_window import MainWindow
 
 
 def resource_path(relative_path):
-    base_path = getattr(
-        sys,
-        "_MEIPASS",
-        os.path.abspath(".")
-    )
+    if hasattr(sys, "_MEIPASS"):
+        base_path = sys._MEIPASS
+    else:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+
     return os.path.join(base_path, relative_path)
 
 
@@ -21,10 +21,10 @@ def main():
     app = QApplication(sys.argv)
 
     app.setApplicationName("Handify")
-    app.setDesktopFileName("Handify")
-    app.setWindowIcon(QIcon(resource_path("handify_1024.png")))
+    app.setWindowIcon(QIcon(resource_path("handify.ico")))
 
     window = MainWindow()
+    window.setWindowIcon(QIcon(resource_path("handify.ico")))
     window.show()
 
     sys.exit(app.exec())
