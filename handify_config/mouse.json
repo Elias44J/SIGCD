@@ -1,0 +1,18 @@
+{
+    "settings": {
+        "move_mode": "relative",
+        "gain": 1.5,
+        "deadzone": 1.0,
+        "track_point": 9,
+        "mirror": true,
+        "smoothing": 0.35,
+        "margin": 0.15,
+        "scroll_sensitivity": 250,
+        "drag_after": 0.45,
+        "min_confidence": 0.6,
+        "hold_frames": 3,
+        "release_frames": 3,
+        "activation_hold": 1.0
+    },
+    "gestures": {}
+}

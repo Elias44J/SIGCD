@@ -1,17 +1,50 @@
+import os
 import sys
 import copy
 import json
 from pathlib import Path
 
 
-# =========================================================
-# CAMINHOS
-# =========================================================
+def _writable(folder):
+    """True se der para criar a pasta e gravar nela."""
+    try:
+        folder.mkdir(parents=True, exist_ok=True)
+        probe = folder / ".write_test"
+        probe.touch()
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
 
 def config_dir():
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).parent / "handify" / "config"
+    # 1) Rodando como AppImage: o runtime define APPIMAGE com o caminho
+    #    do arquivo .AppImage. Guarda os dados ao lado dele.
+    appimage = os.environ.get("APPIMAGE")
 
+    if appimage:
+        folder = Path(appimage).resolve().parent / "handify_config"
+
+        if _writable(folder):
+            return folder
+
+        # Pasta sem permissão de escrita (ex.: /opt): usa ~/.config
+        fallback = Path.home() / ".config" / "handify"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback
+
+    # 2) Executável do PyInstaller fora de AppImage
+    if getattr(sys, "frozen", False):
+        folder = Path(sys.executable).resolve().parent / "handify_config"
+
+        if _writable(folder):
+            return folder
+
+        fallback = Path.home() / ".config" / "handify"
+        fallback.mkdir(parents=True, exist_ok=True)
+        return fallback
+
+    # 3) Rodando pelo código (python main.py): mantém o comportamento atual
     return Path(__file__).resolve().parent
 
 
@@ -42,6 +75,7 @@ MOUSE_DEFAULTS = {
     "move_mode": "relative",  # cursor controlado apenas pela embreagem
     "gain": 1.5,               # relativo: quantas telas por "tela de mão"
     "deadzone": 1.0,           # relativo: px acumulados antes de mover
+    "track_point": 9,          # 9 = palma, 8 = ponta do indicador
     "mirror": True,
     "smoothing": 0.35,
     "margin": 0.15,
@@ -80,15 +114,6 @@ def _write_json(path, data):
 
 
 def migrate_legacy(directory):
-    """
-    Divide o antigo gestures.json em keyboard.json e mouse.json.
-
-    - Os gestos viram os gestos do TECLADO.
-    - Se a versão anterior tinha gestos ligados a botões do mouse
-      (seção "mouse"/"bindings"), as amostras deles são copiadas para o
-      gesto próprio do botão e saem do teclado.
-    - O gestures.json original não é alterado.
-    """
     directory = Path(directory)
     keyboard_path = directory / KEYBOARD_FILE
     mouse_path = directory / MOUSE_FILE
@@ -129,11 +154,6 @@ def migrate_legacy(directory):
     if not mouse_path.exists():
         _write_json(mouse_path, mouse)
 
-
-# =========================================================
-# BASE: arquivo JSON com gravação atômica
-# =========================================================
-
 class JsonStore:
 
     def __init__(self, path, default):
@@ -167,10 +187,6 @@ class JsonStore:
         _write_json(self.path, self.data)
 
 
-# =========================================================
-# TECLADO  (keyboard.json)
-# =========================================================
-
 class ConfigManager(JsonStore):
     """Gestos do teclado: cada gesto dispara uma ação (tecla, atalho...)."""
 
@@ -197,20 +213,7 @@ class ConfigManager(JsonStore):
         self.all_gestures().pop(gesture_id, None)
         self.save()
 
-
-# =========================================================
-# MOUSE  (mouse.json)
-# =========================================================
-
 class MouseConfig(JsonStore):
-    """
-    Gestos do mouse. São independentes dos gestos do teclado.
-
-    - Gesto de ATIVAÇÃO: uma pose (ex.: chifre) mantida por ~1 s que liga
-      e desliga o modo mouse. Fora do modo mouse só o teclado responde; dentro
-      dele só o mouse responde, então os dois nunca entram em conflito.
-    - Cada botão (esquerdo, meio, direito, rolagem) tem o SEU gesto.
-    """
 
     def __init__(self, path=None):
         if path is None:
@@ -226,8 +229,6 @@ class MouseConfig(JsonStore):
         for old in ("enabled", "activation_window", "emergency_hold"):   # chaves antigas
             self.data["settings"].pop(old, None)
         self.all_gestures()      # garante o gesto de ativação e os papéis do mouse
-
-    # ---- gestos ----------------------------------------------------
 
     def all_gestures(self):
         gestures = self.data.setdefault("gestures", {})

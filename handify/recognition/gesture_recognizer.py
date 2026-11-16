@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 import urllib.request
 
@@ -5,48 +6,55 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
+from handify.config.manager import config_dir
+
 
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/"
     "hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 )
+MODEL_NAME = "hand_landmarker.task"
+
+
+def find_model():
+
+    bundled = Path(getattr(sys, "_MEIPASS", "")) / "handify" / "config" / MODEL_NAME
+    if bundled.is_file():
+        return bundled
+
+    target = config_dir() / MODEL_NAME
+    if target.is_file():
+        return target
+    
+    print("Modelo do MediaPipe não encontrado.")
+    print("Baixando modelo...")
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_suffix(".part")
+
+    try:
+        urllib.request.urlretrieve(MODEL_URL, temporary)
+        temporary.replace(target)
+    except Exception as exc:
+        temporary.unlink(missing_ok=True)
+        raise RuntimeError(
+            "Não foi possível baixar o modelo do MediaPipe. "
+            f"Baixe manualmente de {MODEL_URL} e coloque em {target}."
+        ) from exc
+
+    print("Modelo baixado.")
+    return target
 
 
 class GestureRecognizer:
-
-    # Distância máxima para considerar que a mão "é" um gesto cadastrado.
+    
     MATCH_THRESHOLD = 0.32
 
     def __init__(self, model_path=None):
 
-        if model_path is None:
-            model_path = (
-                Path(__file__).resolve().parents[1]
-                / "config"
-                / "hand_landmarker.task"
-            )
+        self.model_path = Path(model_path) if model_path else find_model()
 
-        self.model_path = Path(model_path)
-
-        # Landmarks brutos (x, y na imagem) do último frame; usados pelo
-        # mouse por gestos para saber ONDE a mão está.
         self.last_points = None
-
-        self.model_path.parent.mkdir(
-            parents=True,
-            exist_ok=True
-        )
-
-        if not self.model_path.exists():
-            print("Modelo do MediaPipe não encontrado.")
-            print("Baixando modelo...")
-
-            urllib.request.urlretrieve(
-                MODEL_URL,
-                self.model_path
-            )
-
-            print("Modelo baixado.")
 
         options = mp.tasks.vision.HandLandmarkerOptions(
             base_options=mp.tasks.BaseOptions(
@@ -160,11 +168,6 @@ class GestureRecognizer:
         )
 
     def best_match(self, sample, gestures):
-        """
-        Gesto mais parecido com a amostra, entre os cadastrados.
-
-        Retorna (gesture_id, distância); (None, inf) se não houver amostras.
-        """
 
         best_gesture = None
         best_distance = float("inf")
@@ -193,16 +196,6 @@ class GestureRecognizer:
         gestures,
         threshold=0.32
     ):
-        """
-        Compara a mão atual com todas as amostras cadastradas.
-
-        Retorna:
-
-            gesture_id
-            confidence
-            current_sample
-        """
-
         current_sample = self.extract(frame)
 
         if current_sample is None:

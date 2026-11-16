@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Handify
+Comment=Gestos personalizados
+Exec=Handify
+Icon=handify
+Categories=Utility;
+Terminal=false

@@ -1,3 +1,5 @@
+import os
+import sys
 import time
 import uuid
 import tempfile
@@ -47,6 +49,11 @@ from handify.recognition.controller import GestureController
 # =========================================================
 # Grafite azulado + índigo suave como destaque.
 # Verde = sucesso, âmbar = aviso, coral = erro.
+
+def resource_path(name):
+    # Funciona rodando pelo Python e dentro do .exe do PyInstaller
+    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    return os.path.join(base, name)
 
 STYLE_TEMPLATE = """
 * {
@@ -668,6 +675,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Handify — Gestos personalizados")
         self.resize(1240, 760)
         self.setMinimumSize(1000, 640)
+        self.setWindowIcon(QIcon(resource_path("handify.ico")))
 
         self.settings = QSettings("handify", "sigcd")
         self.theme = self.settings.value("theme", "light")
