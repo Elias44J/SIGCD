@@ -217,6 +217,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# AppImage
 AppDir/
 .appimagetool-x86_64.AppImage
 .Handify-x86_64.AppImage
+Handify-x86_64.AppImage
+*.AppImage
