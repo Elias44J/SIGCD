@@ -1,5 +1,3 @@
-# Handify
-
 <div align="center"> <img src="handify_1024.png" alt="Ícone do Handify" width="128" height="128"> <h1>Handify</h1> </div> <hr> <p align="center"> O controle por gestos feito para o dia a dia: teclado, mouse e atalhos com a mão, usando só a webcam. </p> <p align="center"> <a href="#recursos">Recursos</a> · <a href="#instalação">Instalação</a> · <a href="#como-usar">Como usar</a> · <a href="#problemas-conhecidos">Problemas conhecidos</a> </p> <hr>
 
 Controle o computador com gestos da mão, usando apenas a webcam.
