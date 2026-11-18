@@ -32,13 +32,12 @@ O executavel esta disponivel na aba Realeases do github logo a direita, basta ba
 
 ### Gestos de teclado
 
-
-<img src="docs/teclado.png" alt="Interface do Handify Teclado" width="800"> </p>
-
 1. Na aba **Teclado**, clique em **Novo gesto** e dê um nome.
 2. Mostre a mão à câmera e clique em **Capturar amostra do gesto atual**. Depois de uma contagem de 5 segundos, o app coleta 10 amostras. Repita com pequenas variações de ângulo para o reconhecimento ficar mais robusto.
 3. Escolha a ação (tecla, combinação, sequência ou comando especial), ajuste a confiança mínima e o cooldown, e clique em **Salvar configuração**.
 4. Use **Testar ação** para conferir se a ação funciona sem precisar fazer o gesto.
+
+<img src="docs/teclado.png" alt="Interface do Handify Teclado" width="800"> </p>
 
 ### Modo mouse
 
