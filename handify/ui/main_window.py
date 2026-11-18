@@ -103,7 +103,7 @@ QTabBar::tab {
     border-radius: 8px;
     padding: 8px 26px;
     margin-right: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 0px;
     font-weight: 600;
 }
 QTabBar::tab:hover {
@@ -245,6 +245,14 @@ QPushButton#danger {
     color: @errfg;
 }
 QPushButton#danger:hover { background: @errbg; }
+
+QPushButton#themeButton {
+    padding: 0px;
+    min-width: 36px;
+    max-width: 36px;
+    min-height: 36px;
+    max-height: 36px;
+}
 
 QListWidget {
     background: @field;
@@ -676,6 +684,7 @@ class MainWindow(QMainWindow):
         self.resize(1240, 760)
         self.setMinimumSize(1000, 640)
         self.setWindowIcon(QIcon(resource_path("handify.ico")))
+        qApp.setWindowIcon(QIcon(resource_path("handify_1024.png")))
 
         self.settings = QSettings("handify", "sigcd")
         self.theme = self.settings.value("theme", "light")
@@ -834,13 +843,13 @@ class MainWindow(QMainWindow):
         column.setSpacing(10)
 
         self.theme_button = QPushButton()
+        self.theme_button.setObjectName("themeButton")
         self.theme_button.setCursor(Qt.PointingHandCursor)
-        self.theme_button.setFixedSize(40, 40)
+        self.theme_button.setFixedSize(36, 36)
         self.theme_button.setToolTip("Ativar modo escuro")
         self.theme_button.clicked.connect(self.toggle_theme)
 
-        # Duas abas: gestos que digitam (teclado) e gestos que movem o
-        # mouse. Cada uma tem a sua configuração e o seu arquivo JSON.
+        # Duas abas: 
         self.tabs = QTabWidget()
         self.tabs.setUsesScrollButtons(False)
         self.tabs.setIconSize(QSize(20, 20))
