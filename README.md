@@ -12,7 +12,6 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 - **Gesto de ativação:** segure uma pose por cerca de 1 segundo para ligar ou desligar o modo mouse. Os gestos de teclado ficam pausados enquanto o modo mouse está ligado.
 - **Pré-visualização da mão:** o esqueleto da última amostra gravada aparece no painel lateral.
 - **Confiança e cooldown por gesto:** evite disparos acidentais ajustando a confiança mínima e o tempo de espera entre execuções.
-- **Tema claro e escuro.**
 
 ## Como funciona
 
