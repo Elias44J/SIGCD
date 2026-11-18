@@ -1,4 +1,4 @@
-<div align="center"> <img src="handify_1024.png" alt="Ícone do Handify" width="128" height="128"> <h1>Handify</h1>  <hr> <p align="center"> Controle o computador com as mãos, usando só a webcam. </p> <p align="center"> <a href="#recursos">Recursos</a> · <a href="#instalação">Instalação</a> · <a href="#como-usar">Como usar</a> · <a href="#problemas-conhecidos">Problemas conhecidos</a> </p> <hr>
+<div align="center"> <img src="handify_1024.png" alt="Ícone do Handify" width="128" height="128"> <h1>Handify</h1> </div> <p align="center"> Controle o computador com as mãos, usando só a webcam. </p> <p align="center"> <a href="#recursos">Recursos</a> · <a href="#instalação">Instalação</a> · <a href="#como-usar">Como usar</a> · <a href="#problemas-conhecidos">Problemas conhecidos</a> </p> <hr>
 
 O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações: teclas, atalhos, sequências de comandos e até o controle completo do mouse (mover o cursor, clicar e rolar). Os gestos são todos personalizados: você grava a sua própria pose e escolhe o que ela faz.
 
