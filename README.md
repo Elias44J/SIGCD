@@ -26,7 +26,7 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 
 Dependências principais: `PySide6`, `opencv-python`, `mediapipe` e `pyautogui`.
 
-> [!NOTE] Baixar e Instalar 
+> [!NOTE] 
 > O executavel esta disponivel na aba Releases do github logo a direita, basta baixa-lo e executa-lo para uso.
 
 ## Como usar
