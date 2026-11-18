@@ -22,7 +22,7 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 
 - Python 3.11 a 3.14 
 - Uma webcam
-- Linux, Windows ou macOS
+- Windows ou Linux 
 
 Dependências principais: `PySide6`, `opencv-python`, `mediapipe` e `pyautogui`.
 
@@ -84,7 +84,8 @@ git clone https://github.com/EliasTrindadeLJr/SIGCD.git
 cd SIGCD
 
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+Linux: source venv/bin/activate         
+Windows: venv\Scripts\activate
 
 pip install -r requirements.txt
 python main.py
