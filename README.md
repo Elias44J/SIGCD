@@ -11,8 +11,6 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 - **Pré-visualização da mão:** o esqueleto da última amostra gravada aparece no painel lateral.
 - **Confiança e cooldown por gesto:** evite disparos acidentais ajustando a confiança mínima e o tempo de espera entre execuções.
 
-<img src="docs/interface.png" alt="Interface do Handify" width="800"> </p>
-
 ## Como funciona
 
 1. A câmera captura cada frame e o MediaPipe Hand Landmarker detecta os 21 pontos da mão.
@@ -34,6 +32,9 @@ O executavel esta disponivel na aba Realeases do github logo a direita, basta ba
 
 ### Gestos de teclado
 
+
+<img src="docs/teclado.png" alt="Interface do Handify Teclado" width="800"> </p>
+
 1. Na aba **Teclado**, clique em **Novo gesto** e dê um nome.
 2. Mostre a mão à câmera e clique em **Capturar amostra do gesto atual**. Depois de uma contagem de 5 segundos, o app coleta 10 amostras. Repita com pequenas variações de ângulo para o reconhecimento ficar mais robusto.
 3. Escolha a ação (tecla, combinação, sequência ou comando especial), ajuste a confiança mínima e o cooldown, e clique em **Salvar configuração**.
@@ -44,6 +45,8 @@ O executavel esta disponivel na aba Realeases do github logo a direita, basta ba
 1. Na aba **Mouse**, grave o gesto de **Ativação do modo mouse**.
 2. Grave os gestos de **Mover cursor (embreagem)**, **Clique esquerdo**, **Clique do meio**, **Clique direito** e **Rolagem**.
 3. Segure o gesto de ativação até o selo no painel da câmera mostrar **Modo mouse: LIGADO**. Para desligar, segure o gesto de ativação de novo.
+
+<img src="docs/mouse.png" alt="Interface do Handify Mouse" width="800"> </p>
 
 Com o modo ligado:
 
