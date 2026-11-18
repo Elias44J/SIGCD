@@ -11,6 +11,8 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 - **Pré-visualização da mão:** o esqueleto da última amostra gravada aparece no painel lateral.
 - **Confiança e cooldown por gesto:** evite disparos acidentais ajustando a confiança mínima e o tempo de espera entre execuções.
 
+<img src="docs/interface.png" alt="Interface do Handify" width="800"> </p>
+
 ## Como funciona
 
 1. A câmera captura cada frame e o MediaPipe Hand Landmarker detecta os 21 pontos da mão.

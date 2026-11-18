@@ -1,7 +1,7 @@
 {
     "gestures": {
         "fa3932148c984169929e2c13bc8c81a0": {
-            "name": "Teste",
+            "name": "Indicador direito",
             "samples": [
                 [
                     0.0,
@@ -3905,7 +3905,7 @@
                 ]
             ],
             "enabled": true,
-            "min_confidence": 0.65,
+            "min_confidence": 0.5,
             "cooldown": 0.5,
             "action": {
                 "type": "key",
