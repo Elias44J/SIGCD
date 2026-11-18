@@ -72,7 +72,7 @@ Os gestos e as configurações são arquivos JSON:
 A pasta depende de como o app é executado:
 
 - **AppImage:** `handify_config/`, ao lado do arquivo `.AppImage` (ou `~/.config/handify` se a pasta não for gravável).
-- **Executável do PyInstaller:** `handify_config/`, ao lado do executável.
+- **Executável do PyInstaller(Windows):** `handify_config/`, ao lado do executável.
 
 Esses arquivos têm as amostras da sua mão e não devem ir para o repositório. Mantenha `handify_config/` no `.gitignore`.
 
