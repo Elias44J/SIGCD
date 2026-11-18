@@ -298,7 +298,9 @@ QScrollBar:vertical {
     background: transparent;
     width: 10px;
     margin: 2px;
+    margin: 8px 2px 2px 2px;
 }
+
 QScrollBar::handle:vertical {
     background: @scroll;
     border-radius: 4px;
