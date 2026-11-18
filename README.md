@@ -15,12 +15,12 @@ O Handify reconhece poses da sua mão com o MediaPipe e as transforma em ações
 
 1. A câmera captura cada frame e o MediaPipe Hand Landmarker detecta os 21 pontos da mão.
 2. Os pontos são normalizados: o pulso vira a origem e o tamanho da mão é escalado. Assim o reconhecimento não depende de onde a mão está na imagem nem de quão perto ela está da câmera.
-3. A pose atual é comparada com as amostras gravadas. A menor distância define o gesto e a confiança (distância acima de 0,32 não conta como gesto).
+3. A pose atual é comparada com as amostras gravadas. A menor distância define o gesto e a confiança.
 4. Se a confiança passar do mínimo configurado, a ação do gesto é executada.
 
 ## Requisitos
 
-- Python 3.11 a 3.14 (o MediaPipe pode demorar a suportar versões muito novas; se a instalação falhar, use o 3.12)
+- Python 3.11 a 3.14 
 - Uma webcam
 - Linux, Windows ou macOS
 
