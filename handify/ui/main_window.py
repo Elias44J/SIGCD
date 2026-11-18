@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QScrollArea,
     QTabWidget,
+    QSizePolicy, 
 )
 
 from handify.config.manager import (
@@ -51,9 +52,18 @@ from handify.recognition.controller import GestureController
 # Verde = sucesso, âmbar = aviso, coral = erro.
 
 def resource_path(name):
-    # Funciona rodando pelo Python e dentro do .exe do PyInstaller
+    # Funciona rodando pelo Python e dentro do executável do PyInstaller
     base = getattr(sys, "_MEIPASS", os.path.abspath("."))
     return os.path.join(base, name)
+
+
+# Espaço (px) que o conteúdo das abas deixa à direita, para o botão de tema
+# ficar alinhado com a borda dos cards.
+CONTENT_RIGHT_MARGIN = 8
+
+# Largura que a barra de rolagem ocupa quando aparece (10 px de largura
+# + 2 px de margem de cada lado, definidos no QSS).
+SCROLLBAR_EXTRA = 14
 
 STYLE_TEMPLATE = """
 * {
@@ -248,10 +258,6 @@ QPushButton#danger:hover { background: @errbg; }
 
 QPushButton#themeButton {
     padding: 0px;
-    min-width: 36px;
-    max-width: 36px;
-    min-height: 36px;
-    max-height: 36px;
 }
 
 QListWidget {
@@ -297,7 +303,6 @@ QProgressBar::chunk {
 QScrollBar:vertical {
     background: transparent;
     width: 10px;
-    margin: 2px;
     margin: 8px 2px 2px 2px;
 }
 
@@ -457,7 +462,7 @@ def make_tab_icon(kind, color_off, color_on):
     """
 
     icon = QIcon()
-    size = 48     # desenhado grande e reduzido: fica nítido em telas HiDPI
+    size = 46     # desenhado grande e reduzido: fica nítido em telas HiDPI
 
     for state, color in ((QIcon.Off, color_off), (QIcon.On, color_on)):
 
@@ -466,6 +471,7 @@ def make_tab_icon(kind, color_off, color_on):
 
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
+        painter.translate(0, -4)
 
         pen = QPen(QColor(color))
         pen.setWidthF(3.2)
@@ -600,7 +606,7 @@ class HandPreview(QWidget):
     """Desenha o esqueleto da mão a partir de uma amostra."""
 
     def __init__(self, parent=None):
-        
+
         super().__init__(parent)
 
         self.points = []
@@ -678,6 +684,14 @@ class MainWindow(QMainWindow):
         "Comando especial": ["special"],
     }
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        QTimer.singleShot(0, self.sync_theme_button_margin)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self.sync_theme_button_margin)
+
     def __init__(self):
 
         super().__init__()
@@ -685,8 +699,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Handify — Gestos personalizados")
         self.resize(1240, 760)
         self.setMinimumSize(1000, 640)
-        self.setWindowIcon(QIcon(resource_path("handify.ico")))
-        qApp.setWindowIcon(QIcon(resource_path("handify_1024.png")))
+        self.setWindowIcon(QIcon(resource_path("handify_1024.png")))
 
         self.settings = QSettings("handify", "sigcd")
         self.theme = self.settings.value("theme", "light")
@@ -754,6 +767,9 @@ class MainWindow(QMainWindow):
         self.update_action_fields()
         self.apply_theme(self.theme, save=False)
         self.update_mode_badge()
+
+        # Só depois que tudo existe: alinha o botão de tema ao painel.
+        QTimer.singleShot(0, self.sync_theme_button_margin)
 
     # -----------------------------------------------------
     # Câmera
@@ -844,6 +860,7 @@ class MainWindow(QMainWindow):
         column.setContentsMargins(0, 0, 0, 0)
         column.setSpacing(10)
 
+        # Botão de tema (criado ANTES de qualquer coisa que o use)
         self.theme_button = QPushButton()
         self.theme_button.setObjectName("themeButton")
         self.theme_button.setCursor(Qt.PointingHandCursor)
@@ -851,15 +868,26 @@ class MainWindow(QMainWindow):
         self.theme_button.setToolTip("Ativar modo escuro")
         self.theme_button.clicked.connect(self.toggle_theme)
 
-        # Duas abas: 
+        # Contêiner do botão: a margem direita é recalculada em
+        # sync_theme_button_margin() para alinhar com os cards.
+        theme_container = QWidget()
+        self.theme_container = theme_container          
+        self.theme_layout = QHBoxLayout(theme_container)
+        self.theme_layout.setContentsMargins(0, 0, CONTENT_RIGHT_MARGIN, 0)
+        self.theme_layout.setSpacing(0)
+        self.theme_layout.addWidget(self.theme_button, 0, Qt.AlignVCenter)  
+
+        # Duas abas: gestos que digitam (teclado) e gestos que movem o
+        # mouse. Cada uma tem a sua configuração e o seu arquivo JSON.
         self.tabs = QTabWidget()
         self.tabs.setUsesScrollButtons(False)
         self.tabs.setIconSize(QSize(20, 20))
         self.tabs.addTab(self.build_keyboard_tab(), "Teclado")
         self.tabs.addTab(self.build_mouse_tab(), "Mouse")
+
         # O botão de tema ocupa o canto superior direito da própria barra
         # de abas, mantendo tema, Teclado e Mouse alinhados na mesma linha.
-        self.tabs.setCornerWidget(self.theme_button, Qt.TopRightCorner)
+        self.tabs.setCornerWidget(theme_container, Qt.TopRightCorner)
         self.tabs.currentChanged.connect(self.on_tab_changed)
         self.update_tab_icons()
 
@@ -877,20 +905,69 @@ class MainWindow(QMainWindow):
 
     def wrap_scroll(self, content):
 
+        content.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         scroll.setWidget(content)
 
+        # Quando a barra de rolagem aparece ou some, o botão de tema
+        # precisa acompanhar. O adiamento (singleShot) espera o layout
+        # terminar e evita rodar antes de tabs/theme_layout existirem.
+        scroll.verticalScrollBar().rangeChanged.connect(
+            lambda *_: QTimer.singleShot(0, self.sync_theme_button_margin)
+        )
+
         return scroll
+
+    def sync_theme_button_margin(self, *_):
+        """Alinha o botão de tema às abas (altura) e à borda direita dos cards."""
+
+        if not hasattr(self, "theme_layout") or not hasattr(self, "tabs"):
+            return
+
+        scroll = self.tabs.currentWidget()
+
+        if scroll is None or scroll.widget() is None:
+            return
+
+        # Altura: o botão fica do mesmo tamanho das abas
+        tab_bar = self.tabs.tabBar()
+        tab_bar.ensurePolished()
+
+        tab_height = tab_bar.tabRect(0).height()
+
+        if tab_height <= 0:
+            tab_height = tab_bar.sizeHint().height()
+
+        if tab_height > 0:
+            size = tab_height - 2
+            self.theme_button.setFixedSize(size, size)
+            self.theme_container.setFixedHeight(tab_height)
+
+        # Borda direita: mede onde o primeiro card realmente termina
+        content_layout = scroll.widget().layout()
+        card = content_layout.itemAt(0).widget() if content_layout else None
+
+        if card is not None and card.width() > 0:
+            card_right = card.mapTo(self.tabs, QPoint(card.width(), 0)).x()
+            margin = max(0, self.tabs.width() - card_right)
+        else:
+            margin = CONTENT_RIGHT_MARGIN
+
+        self.theme_layout.setContentsMargins(0, 0, margin, 0)
+
+        self.theme_container.updateGeometry()
+        self.tabs.updateGeometry()
 
     def build_keyboard_tab(self):
 
         content = QWidget()
 
         right = QVBoxLayout(content)
-        right.setContentsMargins(0, 4, 8, 0)
+        right.setContentsMargins(0, 8, CONTENT_RIGHT_MARGIN, 0)
         right.setSpacing(14)
 
         right.addWidget(self.build_gesture_card())
@@ -1086,7 +1163,12 @@ class MainWindow(QMainWindow):
             # Ícone vetorial desenhado com QPainter (não depende de fonte emoji).
             icon_color = PALETTES.get(theme, PALETTES["light"])["muted"]
             self.theme_button.setText("")
-            self.theme_button.setIcon(make_theme_icon("moon" if theme == "light" else "sun", icon_color))
+            self.theme_button.setIcon(
+                make_theme_icon(
+                    "moon" if theme == "light" else "sun",
+                    icon_color
+                )
+            )
             self.theme_button.setIconSize(QSize(22, 22))
             self.theme_button.setToolTip(
                 "Ativar modo escuro" if theme == "light"
@@ -1103,6 +1185,7 @@ class MainWindow(QMainWindow):
 
         if hasattr(self, "tabs"):
             self.update_tab_icons()
+            QTimer.singleShot(0, self.sync_theme_button_margin)
 
         if save:
             self.settings.setValue("theme", theme)
@@ -1427,6 +1510,7 @@ class MainWindow(QMainWindow):
             "Captura cancelada.",
             "error"
         )
+
     # =====================================================
     # CARREGAR
     # =====================================================
@@ -1710,6 +1794,7 @@ class MainWindow(QMainWindow):
         activation_seen = (
             source == "special" and accepted and gesture_id == "activation"
         )
+
         # ---- Gesto de ativação: liga/desliga o modo mouse ---------------
 
         if not self.is_capturing:
@@ -1721,7 +1806,6 @@ class MainWindow(QMainWindow):
                     mouse_on = self.mouse_mode.active
                     keyboard_gesture = None
                     mouse_gesture = None
-
 
             else:
                 self.activation.reset()
@@ -1812,7 +1896,7 @@ class MainWindow(QMainWindow):
         content = QWidget()
 
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(0, 4, 8, 0)
+        layout.setContentsMargins(0, 8, CONTENT_RIGHT_MARGIN, 0)
         layout.setSpacing(14)
 
         layout.addWidget(self.build_mouse_gesture_card())
@@ -1866,6 +1950,10 @@ class MainWindow(QMainWindow):
         form = QFormLayout()
         form.setHorizontalSpacing(14)
         form.setVerticalSpacing(10)
+        form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        form.setRowWrapPolicy(QFormLayout.DontWrapRows)
+        form.setHorizontalSpacing(14)
+        form.setVerticalSpacing(10)
 
         clutch_info = QLabel(
             "O cursor só se movimenta enquanto você mantém o gesto de "
@@ -1898,7 +1986,10 @@ class MainWindow(QMainWindow):
         )
         form.addRow("Zona morta (relativo)", self.mouse_deadzone)
 
-        self.mouse_mirror = QCheckBox("Espelhar (mão à direita = cursor à direita)")
+        self.mouse_mirror = QCheckBox("Espelhar movimento")
+        self.mouse_mirror.setToolTip(
+            "Ligado: mão à direita = cursor à direita."
+        )
         self.mouse_mirror.setChecked(cfg["mirror"])
         form.addRow("", self.mouse_mirror)
 
@@ -1982,7 +2073,7 @@ class MainWindow(QMainWindow):
         return card
 
     def refresh_mouse_roles(self):
-        """Atualiza a lista dos 4 botões com a contagem de amostras."""
+        """Atualiza a lista dos botões com a contagem de amostras."""
 
         current = self.mouse_role_combo.currentData()
 
@@ -2071,6 +2162,9 @@ class MainWindow(QMainWindow):
             self.capture_button.setText(
                 "Capturar amostra do gesto atual"
             )
+
+        # Cada aba tem a sua barra de rolagem: reajusta o botão de tema.
+        QTimer.singleShot(0, self.sync_theme_button_margin)
 
     def save_mouse_configuration(self):
         self.save_mouse_settings()
